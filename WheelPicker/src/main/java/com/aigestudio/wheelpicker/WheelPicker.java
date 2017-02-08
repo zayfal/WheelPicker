@@ -749,6 +749,7 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
             case MotionEvent.ACTION_CANCEL:
                 if (null != getParent())
                     getParent().requestDisallowInterceptTouchEvent(false);
+
                 if (null != mTracker) {
                     mTracker.recycle();
                     mTracker = null;
