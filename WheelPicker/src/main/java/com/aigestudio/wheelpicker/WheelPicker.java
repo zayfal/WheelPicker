@@ -728,10 +728,10 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
                 if (Math.abs(velocity) > mMinimumVelocity) {
                     mScroller.fling(0, mScrollOffsetY, 0, velocity, 0, 0, mMinFlingY, mMaxFlingY);
                     mScroller.setFinalY(mScroller.getFinalY() +
-                            computeDistanceToEndPoint(mScroller.getFinalY() % mItemHeight));
+                            computeDistanceToEndPoint(mItemHeight == 0? 0: mScroller.getFinalY() % mItemHeight));
                 } else {
                     mScroller.startScroll(0, mScrollOffsetY, 0,
-                            computeDistanceToEndPoint(mScrollOffsetY % mItemHeight));
+                            computeDistanceToEndPoint(mItemHeight == 0? 0: mScrollOffsetY % mItemHeight));
                 }
                 // 校正坐标
                 // Correct coordinates
