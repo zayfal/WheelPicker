@@ -2,9 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Demo/Demo.iml" filepath="$PROJECT_DIR$/Demo/Demo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Demo/Demo.iml" filepath="$PROJECT_DIR$/Demo/Demo.iml" group="WheelPicker/Demo" />
       <module fileurl="file://$PROJECT_DIR$/WheelPicker.iml" filepath="$PROJECT_DIR$/WheelPicker.iml" />
-      <module fileurl="file://$PROJECT_DIR$/WheelPicker/WheelPicker-WheelPicker.iml" filepath="$PROJECT_DIR$/WheelPicker/WheelPicker-WheelPicker.iml" />
+      <module fileurl="file://$PROJECT_DIR$/WheelPicker/WheelPicker-WheelPicker.iml" filepath="$PROJECT_DIR$/WheelPicker/WheelPicker-WheelPicker.iml" group="WheelPicker/WheelPicker" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/cme-WheelPicker.iml" filepath="$PROJECT_DIR$/.idea/modules/cme-WheelPicker.iml" group="WheelPicker" />
     </modules>
   </component>
 </project>

@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.widget.Scroller;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -58,6 +59,11 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
     private Paint mPaint;
     private Scroller mScroller;
     private VelocityTracker mTracker;
+    /**
+     * Determines whether the current scrolling animation is triggered by touchEvent or setSelectedItemPosition.
+     * User added eventListeners will only be fired after touchEvents.
+     */
+    private boolean isTouchTriggered;
 
     /**
      * 相关监听器
@@ -274,6 +280,11 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
      */
     private boolean isForceFinishScroll;
 
+    /**
+     * Font typeface path from assets
+     */
+    private String fontPath;
+
     private boolean isDebug;
 
     public WheelPicker(Context context) {
@@ -310,6 +321,7 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
         hasAtmospheric = a.getBoolean(R.styleable.WheelPicker_wheel_atmospheric, false);
         isCurved = a.getBoolean(R.styleable.WheelPicker_wheel_curved, false);
         mItemAlign = a.getInt(R.styleable.WheelPicker_wheel_item_align, ALIGN_CENTER);
+        fontPath = a.getString(R.styleable.WheelPicker_wheel_font_path);
         a.recycle();
 
         // 可见数据项改变后更新与之相关的参数
@@ -318,6 +330,11 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
 
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG | Paint.LINEAR_TEXT_FLAG);
         mPaint.setTextSize(mItemTextSize);
+
+        if (fontPath != null) {
+            Typeface typeface = Typeface.createFromAsset(context.getAssets(), fontPath);
+            setTypeface(typeface);
+        }
 
         // 更新文本对齐方式
         // Update alignment of text
@@ -524,7 +541,7 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
         if (null != mOnWheelChangeListener)
             mOnWheelChangeListener.onWheelScrolled(mScrollOffsetY);
 
-        if (mItemHeight != 0) {
+        if (mItemHeight != 0 && mData.size() != 0) {
             int drawnDataStartPos = -mScrollOffsetY / mItemHeight - mHalfDrawnItemCount;
             for (int drawnDataPos = drawnDataStartPos + mSelectedItemPosition,
                  drawnOffsetPos = -mHalfDrawnItemCount;
@@ -679,6 +696,7 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                isTouchTriggered = true;
                 if (null != getParent())
                     getParent().requestDisallowInterceptTouchEvent(true);
                 if (null == mTracker)
@@ -713,7 +731,7 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
             case MotionEvent.ACTION_UP:
                 if (null != getParent())
                     getParent().requestDisallowInterceptTouchEvent(false);
-                if (isClick) break;
+                if (isClick && !isForceFinishScroll) break;
                 mTracker.addMovement(event);
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.DONUT)
@@ -779,9 +797,9 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
             if (isDebug)
                 Log.i(TAG, position + ":" + mData.get(position) + ":" + mScrollOffsetY);
             mCurrentItemPosition = position;
-            if (null != mOnItemSelectedListener)
+            if (null != mOnItemSelectedListener && isTouchTriggered)
                 mOnItemSelectedListener.onItemSelected(this, mData.get(position), position);
-            if (null != mOnWheelChangeListener) {
+            if (null != mOnWheelChangeListener && isTouchTriggered) {
                 mOnWheelChangeListener.onWheelSelected(position);
                 mOnWheelChangeListener.onWheelScrollStateChanged(SCROLL_STATE_IDLE);
             }
@@ -836,6 +854,24 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
 
     @Override
     public void setSelectedItemPosition(int position) {
+        setSelectedItemPosition(position, true);
+    }
+
+    public void setSelectedItemPosition(int position, final boolean animated) {
+      isTouchTriggered = false;
+      if (animated && mScroller.isFinished()) { // We go non-animated regardless of "animated" parameter if scroller is in motion
+        int length = getData().size();
+        int itemDifference = position - mCurrentItemPosition;
+        if (itemDifference == 0)
+          return;
+        if (isCyclic && Math.abs(itemDifference) > (length / 2)) { // Find the shortest path if it's cyclic
+          itemDifference += (itemDifference > 0) ? -length : length;
+        }
+        mScroller.startScroll(0, mScroller.getCurrY(), 0, (-itemDifference) * mItemHeight);
+        mHandler.post(this);
+      } else {
+        if (!mScroller.isFinished())
+          mScroller.abortAnimation();
         position = Math.min(position, mData.size() - 1);
         position = Math.max(position, 0);
         mSelectedItemPosition = position;
@@ -844,6 +880,7 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
         computeFlingLimitY();
         requestLayout();
         invalidate();
+      }
     }
 
     @Override
